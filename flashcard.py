@@ -1,113 +1,249 @@
 import pygame
 import sys
+import json
+import tkinter as tk
+from tkinter import filedialog
+import asyncio
 
 pygame.init()
 
-SCREEN = pygame.display.set_mode((800, 800))
+SCREEN = pygame.display.set_mode((1200, 800), pygame.RESIZABLE)
 pygame.display.set_caption("Quiz App")
 
 BG_COLOUR = "#0a092d"
 FLASHCARD_COLOUR = "#2e3856"
 FLIPPED_COLOUR = "#595e6d"
-FONT = pygame.font.SysFont("Arial", 30)
+BUTTON_COLOR = "#3b82f6"
 
-SCREEN.fill(BG_COLOUR)
-
-demo_quiz_data = {
-{
+# -------------------------
+# QUIZ DATA DEFAULT
+# -------------------------
+quiz_data = {
     "Ibukota Indonesia adalah?": "Jakarta",
-    "Siapa penemu teori relativitas?": "Albert Einstein",
-    "Hukum Newton ke-1 dikenal sebagai hukum apa?": "Hukum Kelembaman",
-    "3 + 7 * 2": "17",
-    "Jika x^2 - 9 = 0, berapakah x?": "3 atau -3",
-    "Organel sel yang menghasilkan energi disebut?": "Mitokondria",
-    "Simbol kimia besi adalah?": "Fe",
-    "Siapa presiden pertama Indonesia?": "Soekarno",
-    "Sungai terpanjang di dunia adalah?": "Sungai Nil",
-    "Sinonim kata 'besar' adalah?": "Raksasa atau luas",
-    "Antonim kata 'cepat' adalah?": "Lambat",
-    "Kalimat 'Saya sedang belajar' dalam bahasa Inggris?": "I am studying",
-    "Hukum permintaan menyatakan ketika harga naik, permintaan akan...?": "Berkurang",
-    "Alat musik tradisional Jawa yang dipukul disebut?": "Gamelan",
-    "Luas segitiga dengan alas 10 cm dan tinggi 5 cm?": "25 cm²",
-    "Percepatan gravitasi di bumi adalah?": "9,8 m/s²",
-    "Makromolekul utama penyusun membran sel adalah?": "Lipid",
-    "pH larutan netral adalah?": "7",
-    "Indonesia merdeka pada tahun?": "1945",
-    "Benua dengan populasi terbesar?": "Asia",
-    "Sinonim kata 'baik' adalah?": "Bagus atau hebat",
-    "Kalimat 'Dia suka membaca buku setiap hari' dalam bahasa Inggris?": "He/She likes reading books every day",
-    "Struktur pasar dengan satu penjual disebut?": "Monopoli",
-    "Teknik melukis dengan cat air di atas plester basah disebut?": "Fresco",
-    "Selesaikan persamaan: 2y + 5 = 15": "y = 5",
-    "Jika benda bergerak 10 m/s selama 3 detik, jarak yang ditempuh?": "30 m",
-    "Sistem tubuh manusia yang mengatur hormon disebut?": "Sistem endokrin",
-    "Rumus molekul air adalah?": "H2O",
-    "Siapa penulis 'Laskar Pelangi'?": "Andrea Hirata",
-    "Samudra terbesar di dunia adalah?": "Samudra Pasifik",
-    "Sebutkan gas utama penyusun udara?": "Nitrogen",
-    "Jenis ikatan kimia yang terjadi antara logam dan nonlogam disebut?": "Ionik",
-    "Tingkat keasaman larutan asam sulfat pekat?": "Asam kuat",
-    "Perubahan wujud dari cair menjadi gas disebut?": "Penguapan",
-    "Rumus luas lingkaran adalah?": "π × r²",
-    "Bilangan prima antara 10 dan 20 adalah?": "11, 13, 17, 19",
-    "Siapa pahlawan nasional yang dijuluki 'Bapak Pendidikan Indonesia'?": "Ki Hajar Dewantara",
-    "Gunung tertinggi di Indonesia adalah?": "Puncak Jaya",
-    "Hewan yang bertelur disebut?": "Ovipar",
-    "Sebutkan organ pernapasan utama manusia?": "Paru-paru",
-    "Sebutkan alat musik tiup tradisional Sumatera Barat?": "Saluang",
-    "Kalau 25% dari 200 adalah...?": "50",
-    "Jika percepatan = 4 m/s² dan massa = 3 kg, gaya = ?": "12 N",
-    "Jumlah sisi segilima adalah?": "5",
-    "Contoh teks eksposisi adalah?": "Artikel ilmiah",
-    "Kalimat majemuk setara memiliki ciri?": "Memiliki dua klausa yang setara",
-    "Sebutkan salah satu negara ASEAN": "Malaysia",
-    "Peran fotosintesis tumbuhan adalah?": "Menghasilkan oksigen dan glukosa",
-    "Bilangan desimal 0,75 jika diubah menjadi persen adalah?": "75%",
-    "Contoh simetri lipat pada bentuk geometri?": "Segitiga sama sisi"
-}
+    "Siapa penemu teori relativitas?": "Albert Einstein"
 }
 
-current_question = ""
-current_answer = ""
-
-card_turned = False
+questions = list(quiz_data.keys())
+answers = list(quiz_data.values())
 
 index = 0
+card_turned = False
+show_help = False
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-        if event.type == pygame.KEYDOWN:
-            if pygame.key.get_pressed()[pygame.K_SPACE]:
-                card_turned = not card_turned
-            elif pygame.key.get_pressed()[pygame.K_RIGHT] and index < len(demo_quiz_data) - 1:
-                index += 1
-                card_turned = False
-            elif pygame.key.get_pressed()[pygame.K_LEFT] and index > 0:
-                index -= 1
-                card_turned = False
-    
-    current_question = list(demo_quiz_data)[index]
-    current_answer = list(demo_quiz_data.values())[index]
-    current_question_object = FONT.render(current_question, True, "white")
-    current_question_rect = current_question_object.get_rect(center=(400, 400))
-    current_answer_object = FONT.render(current_answer, True, "white")
-    current_answer_rect = current_answer_object.get_rect(center=(400, 400))
-    current_index_object = FONT.render(f"{index+1}/{len(demo_quiz_data)}", True, "white")
-    current_index_rect = current_index_object.get_rect(center=(400, 600))
-    
-    if not card_turned:
+
+# -------------------------
+# LOAD JSON FUNCTION
+# -------------------------
+def load_json():
+
+    global quiz_data, questions, answers, index, card_turned
+
+    root = tk.Tk()
+    root.withdraw()
+
+    file_path = filedialog.askopenfilename(
+        filetypes=[("JSON Files", "*.json")]
+    )
+
+    if file_path:
+        with open(file_path, "r", encoding="utf-8") as f:
+            quiz_data = json.load(f)
+
+        questions = list(quiz_data.keys())
+        answers = list(quiz_data.values())
+        index = 0
+        card_turned = False
+
+
+# -------------------------
+# TEXT WRAP
+# -------------------------
+def render_wrapped_text(text, font, color, rect):
+
+    words = text.split(" ")
+    lines = []
+    current_line = ""
+
+    for word in words:
+
+        test_line = current_line + word + " "
+        width, _ = font.size(test_line)
+
+        if width < rect.width - 40:
+            current_line = test_line
+        else:
+            lines.append(current_line)
+            current_line = word + " "
+
+    lines.append(current_line)
+
+    rendered = []
+    for line in lines:
+        rendered.append(font.render(line.strip(), True, color))
+
+    return rendered
+
+
+# -------------------------
+# DRAW BUTTON
+# -------------------------
+def draw_button(surface, rect, text, font):
+
+    pygame.draw.rect(surface, BUTTON_COLOR, rect, border_radius=8)
+
+    label = font.render(text, True, "white")
+    label_rect = label.get_rect(center=rect.center)
+
+    surface.blit(label, label_rect)
+
+
+# -------------------------
+# MAIN LOOP
+# -------------------------
+async def main():
+    index = 0
+    card_turned = False
+    show_help = False
+    while True:
+
+        width, height = SCREEN.get_size()
+
+        FONT = pygame.font.SysFont("Arial", int(height * 0.045))
+        BUTTON_FONT = pygame.font.SysFont("Arial", int(height * 0.03))
+
+        button_w = width * 0.12
+        button_h = height * 0.05
+
+        help_button = pygame.Rect(
+            width * 0.02,
+            height * 0.02,
+            button_w,
+            button_h
+        )
+
+        import_button = pygame.Rect(
+            width - button_w - width * 0.02,
+            height * 0.02,
+            button_w,
+            button_h
+        )
+
+        for event in pygame.event.get():
+
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+
+                if help_button.collidepoint(event.pos):
+                    show_help = True
+
+                if import_button.collidepoint(event.pos):
+                    load_json()
+
+            if event.type == pygame.KEYDOWN:
+
+                if show_help:
+                    if event.key == pygame.K_ESCAPE:
+                        show_help = False
+                    continue
+
+                if event.key == pygame.K_SPACE:
+                    card_turned = not card_turned
+
+                elif event.key == pygame.K_RIGHT and index < len(questions) - 1:
+                    index += 1
+                    card_turned = False
+
+                elif event.key == pygame.K_LEFT and index > 0:
+                    index -= 1
+                    card_turned = False
+
         SCREEN.fill(BG_COLOUR)
-        pygame.draw.rect(SCREEN, FLASHCARD_COLOUR, (150, 250, 500, 300))
-        SCREEN.blit(current_question_object, current_question_rect)
-    else:
-        SCREEN.fill(BG_COLOUR)
-        pygame.draw.rect(SCREEN, FLIPPED_COLOUR, (150, 250, 500, 300))
-        SCREEN.blit(current_answer_object, current_answer_rect)
-    
-    SCREEN.blit(current_index_object, current_index_rect)
-    
-    pygame.display.update()
+
+        # -------------------------
+        # HELP SCREEN
+        # -------------------------
+        if show_help:
+
+            title_font = pygame.font.SysFont("Arial", int(height * 0.07))
+            text_font = pygame.font.SysFont("Arial", int(height * 0.045))
+
+            title = title_font.render("Controls", True, "white")
+            SCREEN.blit(title, title.get_rect(center=(width / 2, height * 0.2)))
+
+            controls = [
+                "SPACE  : Flip card (question / answer)",
+                "LEFT   : Previous card",
+                "RIGHT  : Next card",
+                "ESC    : Close help screen"
+            ]
+
+            for i, line in enumerate(controls):
+
+                txt = text_font.render(line, True, "white")
+                SCREEN.blit(
+                    txt,
+                    txt.get_rect(center=(width / 2, height * (0.4 + i * 0.1)))
+                )
+
+            pygame.display.update()
+            continue
+
+        # -------------------------
+        # CARD SIZE
+        # -------------------------
+        card_w = width * 0.7
+        card_h = height * 0.4
+
+        card_x = (width - card_w) / 2
+        card_y = (height - card_h) / 2
+
+        card_rect = pygame.Rect(card_x, card_y, card_w, card_h)
+
+        if not card_turned:
+            text = questions[index]
+            color = FLASHCARD_COLOUR
+        else:
+            text = answers[index]
+            color = FLIPPED_COLOUR
+
+        pygame.draw.rect(SCREEN, color, card_rect, border_radius=15)
+
+        lines = render_wrapped_text(text, FONT, "white", card_rect)
+
+        total_h = len(lines) * FONT.get_height()
+        start_y = card_rect.centery - total_h / 2
+
+        for i, line in enumerate(lines):
+
+            rect = line.get_rect(
+                center=(width / 2, start_y + i * FONT.get_height())
+            )
+
+            SCREEN.blit(line, rect)
+
+        # -------------------------
+        # INDEX TEXT
+        # -------------------------
+        idx_font = pygame.font.SysFont("Arial", int(height * 0.03))
+
+        idx_text = idx_font.render(
+            f"{index+1}/{len(questions)}",
+            True,
+            "white"
+        )
+
+        SCREEN.blit(idx_text, (width * 0.48, height * 0.9))
+
+        # -------------------------
+        # BUTTONS
+        # -------------------------
+        draw_button(SCREEN, help_button, "Help", BUTTON_FONT)
+        draw_button(SCREEN, import_button, "Import JSON", BUTTON_FONT)
+
+        pygame.display.update()
+        await asyncio.sleep(0)
+
+asyncio.run(main())
